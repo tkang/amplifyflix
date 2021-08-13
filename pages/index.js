@@ -2,128 +2,11 @@ import Head from "next/head";
 import SAMPLE_TMDB_IDS from "../src/sample_tmdb_ids";
 import { useEffect, useState } from "react";
 import _ from "lodash";
+import SAMPLE_MOVIES from "../src/sample_movies";
 
 const TMDB_API_KEY = "ca294fadd74fb6ddb4e74a12e521ceae";
 const TMDB_MOVIE_API_URL = "https://api.themoviedb.org/3/movie/";
 const TMDB_MOVIE_POSTER_PATH = "https://image.tmdb.org/t/p/original/";
-
-const SAMPLE_MOVIES = [
-  {
-    adult: false,
-    backdrop_path: "/pTzE7JsbpZ7DfMHEbZCm6kMLB6o.jpg",
-    belongs_to_collection: null,
-    budget: 50000000,
-    genres: [
-      {
-        id: 18,
-        name: "Drama",
-      },
-      {
-        id: 35,
-        name: "Comedy",
-      },
-      {
-        id: 10749,
-        name: "Romance",
-      },
-    ],
-    homepage: "",
-    id: 4599,
-    imdb_id: "tt0350028",
-    original_language: "en",
-    original_title: "Raising Helen",
-    overview:
-      "Helen Harris has a glamorous, big-city life working for one of New York's hottest modeling agencies. But suddenly her free-spirited life gets turned upside down when she must chose between the life she's always loved, and the new loves of her life!",
-    popularity: 9.161,
-    poster_path: "/lH36r2wRRu7QRBSY0DYooVFAoYW.jpg",
-    production_companies: [
-      {
-        id: 10157,
-        logo_path: null,
-        name: "Beacon Pictures",
-        origin_country: "",
-      },
-      {
-        id: 9195,
-        logo_path: "/ou5BUbtulr6tIt699q6xJiEQTR9.png",
-        name: "Touchstone Pictures",
-        origin_country: "US",
-      },
-      {
-        id: 10227,
-        logo_path: "/3YfRy3DBl4abcqkzGx4RVNz12yl.png",
-        name: "Mandeville Films",
-        origin_country: "US",
-      },
-    ],
-    production_countries: [
-      {
-        iso_3166_1: "US",
-        name: "United States of America",
-      },
-    ],
-    release_date: "2004-05-27",
-    revenue: 49718611,
-    runtime: 119,
-    spoken_languages: [
-      {
-        english_name: "English",
-        iso_639_1: "en",
-        name: "English",
-      },
-    ],
-    status: "Released",
-    tagline: "Her uptown life gets turned inside out!",
-    title: "Raising Helen",
-    video: false,
-    vote_average: 6.1,
-    vote_count: 538,
-  },
-  {
-    adult: false,
-    backdrop_path: null,
-    belongs_to_collection: null,
-    budget: 0,
-    genres: [
-      {
-        id: 18,
-        name: "Drama",
-      },
-    ],
-    homepage: "http://www.dougaitkenblackmirror.com/",
-    id: 452830,
-    imdb_id: "tt2492564",
-    original_language: "en",
-    original_title: "Black Mirror",
-    overview:
-      "A nameless drifter navigates a barren landscape punctuated by satellite dishes, radio towers and droning airplanes. Stopping periodically in anonymous hotel rooms, she makes attempts to connect to an unidentified second party.",
-    popularity: 3.902,
-    poster_path: "/fYi4BQhoj2ay3oJwT2x8kMNHpds.jpg",
-    production_companies: [],
-    production_countries: [
-      {
-        iso_3166_1: "US",
-        name: "United States of America",
-      },
-    ],
-    release_date: "2011-06-20",
-    revenue: 0,
-    runtime: 4,
-    spoken_languages: [
-      {
-        english_name: "English",
-        iso_639_1: "en",
-        name: "English",
-      },
-    ],
-    status: "Released",
-    tagline: "",
-    title: "Black Mirror",
-    video: false,
-    vote_average: 7.6,
-    vote_count: 47,
-  },
-];
 
 function generateTmdbMovieApiUrl(tmdbId) {
   return `${TMDB_MOVIE_API_URL}${tmdbId}?api_key=${TMDB_API_KEY}`;
@@ -148,7 +31,7 @@ async function fetchMovieDatas(tmdbIds) {
   return datas;
 }
 
-function RecommendedMovies({ movies }) {
+function RecommendedMovies({ movies, handleNext, handlePrev }) {
   return (
     <div className="bg-white">
       <div className="max-w-2xl px-4 py-16 mx-auto sm:py-24 sm:px-6 lg:max-w-7xl lg:px-8">
@@ -185,6 +68,15 @@ function RecommendedMovies({ movies }) {
             </div>
           ))}
         </div>
+        <div className="mt-6">
+          <button
+            onClick={handleNext}
+            type="button"
+            className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+          >
+            Recommend More
+          </button>
+        </div>
       </div>
     </div>
   );
@@ -193,20 +85,34 @@ function RecommendedMovies({ movies }) {
 function Home() {
   const [tmdbIds, setTmdbIds] = useState(_.shuffle(SAMPLE_TMDB_IDS));
   const [recommendedMovies, setRecommendedMovies] = useState([]);
+  const [currIdx, setCurrIdx] = useState(0);
+
   const SAMPLING_SIZE = 4;
 
   useEffect(() => {
-    /*
-    setRecommendedMovies(SAMPLE_MOVIES);
-    console.log(SAMPLE_MOVIES);
-    */
-
-    const randomIds = tmdbIds.slice(0, SAMPLING_SIZE);
-    fetchMovieDatas(randomIds).then((datas) => {
-      console.log(datas);
-      setRecommendedMovies(datas);
-    });
+    //setRecommendedMovies(SAMPLE_MOVIES);
+    fetchData(currIdx);
   }, []);
+
+  async function fetchData(startingIdx) {
+    const ids = tmdbIds.slice(startingIdx, startingIdx + SAMPLING_SIZE);
+    setCurrIdx(startingIdx + SAMPLING_SIZE);
+
+    fetchMovieDatas(ids).then((datas) => {
+      console.log(datas);
+      setRecommendedMovies([...recommendedMovies, ...datas]);
+    });
+  }
+
+  function handleNext() {
+    const nextIdx = Math.min(tmdbIds.length - 1, currIdx + SAMPLING_SIZE);
+    if (nextIdx === currIdx) return;
+
+    fetchData(nextIdx);
+    setCurrIdx(nextIdx);
+  }
+
+  console.log("currIdx = ", currIdx);
 
   return (
     <div>
@@ -230,7 +136,10 @@ function Home() {
               </p>
             </div>
           </div>
-          <RecommendedMovies movies={recommendedMovies} />
+          <RecommendedMovies
+            movies={recommendedMovies}
+            handleNext={handleNext}
+          />
         </main>
       </div>
 
