@@ -137,11 +137,74 @@ function Tabs({ tabs, selectedTabName, setSelectedTabName }) {
   );
 }
 
+const people = [
+  {
+    name: "Lindsay Walton",
+    imageUrl:
+      "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=3&w=256&h=256&q=80",
+  },
+  // More people...
+];
+const DEFAULT_USER_ACTIONS = [
+  {
+    id: 1,
+    person: people[0],
+    project: "Workcation",
+    commit: "2d89f0c8",
+    environment: "production",
+    time: "1h",
+  },
+  // More items...
+];
+
+function UserActions({ userActions }) {
+  return (
+    <div className="bg-white">
+      <div className="max-w-2xl px-4 py-16 mx-auto sm:py-24 sm:px-6 lg:max-w-7xl lg:px-8">
+        <h2 className="text-2xl font-extrabold tracking-tight text-gray-900">
+          User Actions
+        </h2>
+
+        <div className="grid grid-cols-1 mt-6 gap-y-10 gap-x-6 sm:grid-cols-1 lg:grid-cols-1 xl:gap-x-8">
+          <ul role="list" className="divide-y divide-gray-200">
+            {userActions.map((activityItem) => (
+              <li key={activityItem.id} className="py-4">
+                <div className="flex space-x-3">
+                  <img
+                    className="w-6 h-6 rounded-full"
+                    src={activityItem.person.imageUrl}
+                    alt=""
+                  />
+                  <div className="flex-1 space-y-1">
+                    <div className="flex items-center justify-between">
+                      <h3 className="text-sm font-medium">
+                        {activityItem.person.name}
+                      </h3>
+                      <p className="text-sm text-gray-500">
+                        {activityItem.time}
+                      </p>
+                    </div>
+                    <p className="text-sm text-gray-500">
+                      Deployed {activityItem.project} ({activityItem.commit} in
+                      master) to {activityItem.environment}
+                    </p>
+                  </div>
+                </div>
+              </li>
+            ))}
+          </ul>
+        </div>
+      </div>
+    </div>
+  );
+}
+
 function Home() {
   const [tmdbIds, setTmdbIds] = useState(_.shuffle(SAMPLE_TMDB_IDS));
   const [recommendedMovies, setRecommendedMovies] = useState([]);
   const [currIdx, setCurrIdx] = useState(0);
   const [selectedTabName, setSelectedTabName] = useState("Recommendations");
+  const [userActions, setUserActions] = useState(DEFAULT_USER_ACTIONS);
   const SAMPLING_SIZE = 4;
 
   useEffect(() => {
@@ -202,6 +265,10 @@ function Home() {
               movies={recommendedMovies}
               handleNext={handleNext}
             />
+          )}
+
+          {selectedTabName === "User Actions" && (
+            <UserActions userActions={userActions} />
           )}
         </main>
       </div>
