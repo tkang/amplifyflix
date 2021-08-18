@@ -291,13 +291,13 @@ api 이용을 위해 https://www.themoviedb.org/ 에서 계정을 생성하고 a
 
 ### Sample TMDB ids
 
-**src/sample_tmdb_ids.js** 파일을 생성하고 다음 파일의 내용을 저장합니다. [sample_tmdb_ids.js](src/sample_tmdb_ids.js)
+**src/sample_movie_ids.json** 파일을 생성하고 다음 파일의 내용을 저장합니다. [sample_movie_ids.json](src/sample_movie_ids.json)
 
 ## Recommended Movie 목록 UI
 
 추천 영화 목록의 UI 를 구현해봅시다. 일단은 sample_tmdb_ids 를 섞은후 순서대로 보여줍니다.
 
-### RecommendedMovies UI 추가
+### RecommendedMovies UI 컴포넌트 추가
 
 **components/RecommendedMovies.js** 파일에 RecommendedMovies 컴포넌트를 만들어봅시다.
 
@@ -367,11 +367,12 @@ export default RecommendedMovies;
 **hooks/useRecommendedMovies.js** 파일에 recommendedMovies 데이터를 로딩하고 저장하는 custom hook 을 만들어줍니다.
 
 ```js
-import SAMPLE_TMDB_IDS from "../src/sample_tmdb_ids";
 import { useEffect, useState } from "react";
 import _ from "lodash";
+import SAMPLE_MOVIE_IDS from "../src/sample_movie_ids.json";
+const SAMPLE_TMDB_IDS = SAMPLE_MOVIE_IDS.map((e) => e.tmdbId);
 
-const TMDB_API_KEY = "ca294fadd74fb6ddb4e74a12e521ceae";
+const TMDB_API_KEY = "your-tmdb-api-key";
 const TMDB_MOVIE_API_URL = "https://api.themoviedb.org/3/movie/";
 
 function generateTmdbMovieApiUrl(tmdbId) {
@@ -387,17 +388,22 @@ async function fetchMovieDatas(tmdbIds) {
 }
 
 function useRecommnededMovies() {
-  const [tmdbIds, setTmdbIds] = useState(_.shuffle(SAMPLE_TMDB_IDS));
+  const [recommendedTmdbIds, setRecommendedTmdbIds] = useState(
+    _.shuffle(SAMPLE_TMDB_IDS)
+  );
   const [recommendedMovies, setRecommendedMovies] = useState([]);
   const [currIdx, setCurrIdx] = useState(0);
   const SAMPLING_SIZE = 4;
 
   useEffect(() => {
-    fetchData(currIdx);
-  }, []);
+    loadMore();
+  }, [recommendedTmdbIds]);
 
   async function fetchData(startingIdx) {
-    const ids = tmdbIds.slice(startingIdx, startingIdx + SAMPLING_SIZE);
+    const ids = recommendedTmdbIds.slice(
+      startingIdx,
+      startingIdx + SAMPLING_SIZE
+    );
     setCurrIdx(startingIdx + SAMPLING_SIZE);
 
     fetchMovieDatas(ids).then((datas) => {
@@ -407,11 +413,12 @@ function useRecommnededMovies() {
   }
 
   function loadMore() {
-    const nextIdx = Math.min(tmdbIds.length - 1, currIdx + SAMPLING_SIZE);
-    if (nextIdx === currIdx) return;
-
-    fetchData(nextIdx);
-    setCurrIdx(nextIdx);
+    if (currIdx >= recommendedTmdbIds.length) {
+      console.log("reached end!");
+      return;
+    }
+    fetchData(currIdx);
+    setCurrIdx(currIdx + SAMPLING_SIZE);
   }
 
   return { recommendedMovies, loadMore };
@@ -530,7 +537,7 @@ function Tabs({ tabs, selectedTabName, setSelectedTabName }) {
 export default Tabs;
 ```
 
-### UserActions UI 추가
+### UserActions UI 컴포넌트 추가
 
 **components/UserActions.js** 에 UserActions 컴포넌트를 만들어봅시다.
 
@@ -669,7 +676,313 @@ function Home() {
 
 ```
 
-## Additional Tests + TODO's
+## Personalize 연동
+
+Amazon Personalize 가이드를 따라 추천엔진을 생성해봅니다.
+
+[Amazon Personalize Demo](https://www.youtube.com/watch?v=D92kcZkcWzs)
+
+### Personalize Campaign ARN 확인
+
+정상적으로 진행이 되었다면 다음과 같이 캠페인이 생성이 되어있고, Campaign ARN 을 확인할수 있습니다.
+
+![Personalize Campaigns](personalize_campaigns.png)
+
+### Personalize 호출을 위한 Cognito Identity Pool 생성
+
+우리의 어플리케이션에서 Personalize Campaign 을 호출하기 위해선 인증이 필요합니다. 인증을 위해 Cognito Identity Pool 이 필요합니다.
+
+Cognito Identity Pool 을 생성해봅시다.
+
+Cognito 페이지로 이동합시다. (https://ap-northeast-2.console.aws.amazon.com/cognito/home?region=ap-northeast-2)
+페이지 이동후 `Manage Identity Pools` 를 클릭합니다.
+
+![Getting Started Cognito](getting_started_cognito.png)
+
+`Create new identity pool` 버튼을 클릭하면 새로운 identity pool 을 생성하기 위한 페이지로 이동합니다.
+
+![Create new identity pool](create_new_identity_pool.png)
+
+새로운 identity pool 을 다음과 같이 생성합니다.
+
+- Identity pool name 은 우리의 어플리케이션 이름을 넣어줍니다 (예 : amplifyflix)
+- `Enable access to unauhorized identity` 는 체크를 해줍니다. (이유 : 로그인 되지 않은 사용자의 경우에도 추천 목록을 보여줘야 하기 때문에)
+
+![Create new identity pool step 1](create_new_identity_pool_step1.png)
+
+다음은, Identity pool 에서 사용될 IAM role 을 지정합니다. show detail 을 눌러 펼친후, 기본 설정된 값으로 하시면 됩니다.
+
+![Identity Pool iam role](identity_pool_iam_role.png)
+
+과정이 완료되면 AWS SDK 셋업시 Cognito Identity 를 통해 인증하는 샘플 코드를 다음과 같이 확인하실수 있습니다.
+
+![Sample code cognito identity](sample_code_cognito_identity.png)
+
+`Attach policies` 를 클릭합니다.
+
+![Attach policy button click](attach_policy_button_click.png)
+
+filter 에서 `personalize` 로 검색해서 나오는 `AmazonPersonalizeFullAccess` 를 선택후 `Attach Policy` 를 클릭합니다.
+
+![attach personzlie access policy](attach_personalize_access_policy.png)
+
+### Identity Pool 에 붙은 IAM Role 에 Permission 추가
+
+Identity pool 에 붙은 IAM Role 에서는 Personalize campaign 호출을 하기 위한 permission 이 필요합니다.
+
+https://console.aws.amazon.com/iamv2/home#/roles 페이지로 이동하여 해당 IAM Role 에 permission 을 다음과정으로 추가해봅시다.
+
+- `Cognito` 로 검색하면 이전 과정에서 생성된 role 이 나옵니다. (예 : `Cognito_amplifyflixUnauth_Role`) 해당 role 을 선택합니다.
+
+![iam console cognito role](iam_console_cognito_role.png)
+
+### AWS SDK 를 통한 연동
+
+자 이제 인증을 위한 identity pool 이 준비가 되었으니, AWS SDK 를 통해 우리의 어플리케이션에서 Personalize Campaign 을 호출하도록 해봅시다.
+
+우선 aws-sdk 를 설치합니다.
+
+```sh
+$ yarn add aws-sdk
+```
+
+다음은, aws-sdk 를 설정해봅시다. 최상위 컴포넌트인 **pages/\_app.js** 파일에 aws-sdk 설정을 하도록 하겠습니다.
+
+```diff
+import config from "../src/aws-exports";
+Amplify.configure(config);
+
++ import AWS from "aws-sdk";
++ AWS.config.region = "ap-northeast-2"; // Region
++ AWS.config.credentials = new AWS.CognitoIdentityCredentials({
++   IdentityPoolId: "ap-northeast-2:7d750501-0993-4a45-9422-a541e214672e",
++ });
+
+```
+
+### getRecommendations
+
+aws-sdk 가 준비되었으니, 이제 getRecommendations 로 추천을 받도록 코드를 변경해봅시다.
+**hooks/useRecommendedMovies.js** 파일을 다음과 같이 바꿔봅시다.
+
+```js
+import { useEffect, useState } from "react";
+import _ from "lodash";
+import AWS from "aws-sdk";
+import SAMPLE_MOVIE_IDS from "../src/sample_movie_ids.json";
+
+const MOVIE_ID_TO_TMDB_ID = {};
+SAMPLE_MOVIE_IDS.forEach(
+  (e) => (MOVIE_ID_TO_TMDB_ID[`${e.movieId}`] = e.tmdbId)
+);
+
+const TMDB_API_KEY = "your-tmdb-api-key"; // 생성된 tmdb api key
+const TMDB_MOVIE_API_URL = "https://api.themoviedb.org/3/movie/";
+
+function generateTmdbMovieApiUrl(tmdbId) {
+  return `${TMDB_MOVIE_API_URL}${tmdbId}?api_key=${TMDB_API_KEY}`;
+}
+
+async function fetchMovieDatas(tmdbIds) {
+  const urls = tmdbIds.map((tmdbId) => generateTmdbMovieApiUrl(tmdbId));
+  console.log(urls);
+  const responses = await Promise.all(urls.map((url) => fetch(url)));
+  const datas = await Promise.all(responses.map((response) => response.json()));
+  return datas;
+}
+
+async function getRecommendations({ userId, numResults = 48 }) {
+  // 생성된 personalize campaign arn
+  const personalizeParams = {
+    campaignArn:
+      "arn:aws:personalize:ap-northeast-2:your-personalize-campaign-arn:campaign/movie-recommendations",
+    numResults,
+    userId,
+  };
+
+  const personalizeRuntime = new AWS.PersonalizeRuntime();
+
+  const data = await personalizeRuntime
+    .getRecommendations(personalizeParams)
+    .promise();
+  const itemList = data.itemList;
+  return itemList;
+}
+
+function useRecommnededMovies() {
+  const [recommendedTmdbIds, setRecommendedTmdbIds] = useState([]);
+  const [recommendedMovies, setRecommendedMovies] = useState([]);
+  const [currIdx, setCurrIdx] = useState(0);
+  const SAMPLING_SIZE = 4;
+
+  useEffect(() => {
+    const userId = "random-user-id"; // userId 를 가져올수 있는 상황이면 (예 : 로그인 상태) userId 값을 전달.
+    getRecommendations({ userId }).then((recommendations) => {
+      console.log(recommendations);
+      const movieIds = recommendations.map((e) => e.itemId);
+      const tmdbIds = movieIds
+        .map((movieId) => MOVIE_ID_TO_TMDB_ID[movieId])
+        .filter((e) => e !== undefined); // NOTE : some data missing
+      setRecommendedTmdbIds(tmdbIds);
+    });
+  }, []);
+
+  useEffect(() => {
+    loadMore();
+  }, [recommendedTmdbIds]);
+
+  async function fetchData(startingIdx) {
+    const ids = recommendedTmdbIds.slice(
+      startingIdx,
+      startingIdx + SAMPLING_SIZE
+    );
+    setCurrIdx(startingIdx + SAMPLING_SIZE);
+
+    fetchMovieDatas(ids).then((datas) => {
+      console.log(datas);
+      setRecommendedMovies([...recommendedMovies, ...datas]);
+    });
+  }
+
+  function loadMore() {
+    if (currIdx >= recommendedTmdbIds.length) {
+      console.log("reached end!");
+      return;
+    }
+    fetchData(currIdx);
+    setCurrIdx(currIdx + SAMPLING_SIZE);
+  }
+
+  return { recommendedMovies, loadMore };
+}
+
+export default useRecommnededMovies;
+```
+
+## Authentication
+
+다음과정은, authentication을 추가를 해보겠습니다.
+
+authentication 추가를 위해, `ampfliy add auth` 명령어를 실행합니다.
+
+```sh
+$ amplify add auth
+
+? Do you want to use default authentication and security configuration? Default configuration
+? How do you want users to be able to sign in when using your Cognito User Pool? Username
+? Do you want to configure advanced settings? No, I am done.
+```
+
+변경사항 적용을 위해 `amplify push` 명령어를 실행합니다.
+
+```sh
+$ amplify push
+? Are you sure you want to continue? Yes
+```
+
+### withAuthenticator
+
+인증/로그인된 사용자들만 접근할수 있는 페이지에 `withAuthenticator` HOC (Higher Order Component) 를 적용하면 됩니다.
+
+예를들어, 특정 페이지에 withAuthenticator 를 적용하면, 사용자는 반드시 로그인을 해야만 페이지에 접근이 가능합니다. 만약에 로그인이 되어있지 않다면, 로그인 페이지로 이동하게 됩니다.
+
+테스트를 위해 **/pages/index.js** 를 변경해봅시다.
+
+```diff
+/* pages/index.js */
+import Head from "next/head";
++ import { withAuthenticator } from "@aws-amplify/ui-react";
+
+- export default Home;
++ export default withAuthenticator(Home);
+```
+
+> Authenticator UI Component 관련 문서 [here](https://docs.amplify.aws/ui/auth/authenticator/q/framework/react)
+
+코드를 변경했으면 브라우져에서 테스트 해봅시다.
+
+```sh
+yarn dev
+```
+
+로그인 프롬프트가 뜨는 것으로, Authentication 플로우가 app 에 추가된것을 확인할 수 있습니다.
+
+![SignIn](sign_in.png)
+
+테스트를 위해 계정생성을 해봅시다.
+
+![SignUp](sign_up.png)
+
+계정 생성을 하면 입력한 이메일로 confirmation code 가 전송됩니다.
+이메일로 받은 confirmation code 를 입력해서 계정 생성을 마무리 합니다.
+
+![ConfirmSignup](confirm_signup.png)
+
+auth console 로 들어가면 생성된 사용자를 확인할수 있습니다.
+
+```sh
+$ amplify console auth
+
+> Choose User Pool
+```
+
+### Signout
+
+Signout 기능을 Signout UI Compnonent 를 이용해 추가해봅시다.
+
+`AmplifySignout` compoent 를 페이지 어딘가에 넣어주세요.
+
+```js
+import { withAuthenticator, AmplifySignOut } from "@aws-amplify/ui-react";
+
+/* UI 어딘가에 넣어주세요. */
+<AmplifySignOut />;
+```
+
+> Sign Out UI Component 문서 [here](https://docs.amplify.aws/ui/auth/sign-out/q/framework/react)
+
+SignOut 버튼을 눌러서 로그아웃이 잘 되는지도 확인해보세요.
+
+### Accessing User Data
+
+로그인 상태에서 `Auth.currentAuthenticatedUser()` 로 사용자 정보를 가져올수 있습니다.
+
+사용자 정보 확인을 위해 **pages/index.js** 파일을 변경해봅시다.
+
+```diff
++ import { useEffect } from "react";
++ import { Auth } from "aws-amplify";
+
++ function useUser() {
++   const [user, setUser] = useState(null);
++
++   useEffect(() => {
++     checkUser();
++   }, []);
++
++   async function checkUser() {
++     const u = await Auth.currentAuthenticatedUser();
++     setUser(u);
++   }
++
++   return { user, setUser };
++ }
+
+function Home() {
+  const [selectedTabName, setSelectedTabName] = useState("Recommendations");
+  const { recommendedMovies, loadMore } = useRecommnededMovies();
++ const { user } = useUser();
+
+  /* 이전과 동일 */
+}
+```
+
+브라우져 콘솔을 열고 / 페이지를 로딩하면, 콘솔에 로그인된 사용자 정보들과 attributes 들이 출력되는걸 확인할수 있습니다.
+
+## Additional TODO's
+
+- 로그인 된 사용자만 추천을 받을수 있게 바꿔보세요.
+  | 힌트 : https://docs.aws.amazon.com/cognito/latest/developerguide/amazon-cognito-integrating-user-pools-with-identity-pools.html
 
 ## 리소스 삭제
 

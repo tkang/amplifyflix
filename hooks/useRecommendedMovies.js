@@ -1,6 +1,12 @@
-import SAMPLE_TMDB_IDS from "../src/sample_tmdb_ids";
 import { useEffect, useState } from "react";
 import _ from "lodash";
+import AWS from "aws-sdk";
+import SAMPLE_MOVIE_IDS from "../src/sample_movie_ids.json";
+
+const MOVIE_ID_TO_TMDB_ID = {};
+SAMPLE_MOVIE_IDS.forEach(
+  (e) => (MOVIE_ID_TO_TMDB_ID[`${e.movieId}`] = e.tmdbId)
+);
 
 const TMDB_API_KEY = "ca294fadd74fb6ddb4e74a12e521ceae";
 const TMDB_MOVIE_API_URL = "https://api.themoviedb.org/3/movie/";
@@ -17,18 +23,49 @@ async function fetchMovieDatas(tmdbIds) {
   return datas;
 }
 
+async function getRecommendations({ userId, numResults = 48 }) {
+  const personalizeParams = {
+    campaignArn:
+      "arn:aws:personalize:ap-northeast-2:652351719285:campaign/movie-recommendations",
+    numResults,
+    userId,
+  };
+
+  const personalizeRuntime = new AWS.PersonalizeRuntime();
+
+  const data = await personalizeRuntime
+    .getRecommendations(personalizeParams)
+    .promise();
+  const itemList = data.itemList;
+  return itemList;
+}
+
 function useRecommnededMovies() {
-  const [tmdbIds, setTmdbIds] = useState(_.shuffle(SAMPLE_TMDB_IDS));
+  const [recommendedTmdbIds, setRecommendedTmdbIds] = useState([]);
   const [recommendedMovies, setRecommendedMovies] = useState([]);
   const [currIdx, setCurrIdx] = useState(0);
   const SAMPLING_SIZE = 4;
 
   useEffect(() => {
-    fetchData(currIdx);
+    getRecommendations({ userId: "random-user-id" }).then((recommendations) => {
+      console.log(recommendations);
+      const movieIds = recommendations.map((e) => e.itemId);
+      const tmdbIds = movieIds
+        .map((movieId) => MOVIE_ID_TO_TMDB_ID[movieId])
+        .filter((e) => e !== undefined); // NOTE : some data missing
+      setRecommendedTmdbIds(tmdbIds);
+    });
   }, []);
 
+  useEffect(() => {
+    loadMore();
+  }, [recommendedTmdbIds]);
+
   async function fetchData(startingIdx) {
-    const ids = tmdbIds.slice(startingIdx, startingIdx + SAMPLING_SIZE);
+    const ids = recommendedTmdbIds.slice(
+      startingIdx,
+      startingIdx + SAMPLING_SIZE
+    );
     setCurrIdx(startingIdx + SAMPLING_SIZE);
 
     fetchMovieDatas(ids).then((datas) => {
@@ -38,11 +75,12 @@ function useRecommnededMovies() {
   }
 
   function loadMore() {
-    const nextIdx = Math.min(tmdbIds.length - 1, currIdx + SAMPLING_SIZE);
-    if (nextIdx === currIdx) return;
-
-    fetchData(nextIdx);
-    setCurrIdx(nextIdx);
+    if (currIdx >= recommendedTmdbIds.length) {
+      console.log("reached end!");
+      return;
+    }
+    fetchData(currIdx);
+    setCurrIdx(currIdx + SAMPLING_SIZE);
   }
 
   return { recommendedMovies, loadMore };

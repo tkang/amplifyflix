@@ -10,6 +10,11 @@
       "StackName": "amplify-amplifyflix-dev-141225",
       "StackId": "arn:aws:cloudformation:ap-northeast-2:652351719285:stack/amplify-amplifyflix-dev-141225/106536c0-fbf5-11eb-b73d-06b4841a266a",
       "AmplifyAppId": "d1x2h1aq8od9j1"
+    },
+    "categories": {
+      "auth": {
+        "amplifyflix34e92df5": {}
+      }
     }
   }
 }
