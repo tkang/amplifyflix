@@ -1,15 +1,59 @@
+import { useEffect, useState } from "react";
+
 const TMDB_MOVIE_POSTER_PATH = "https://image.tmdb.org/t/p/original/";
 
 function generateMoviePosterUrl(posterPath) {
   return `${TMDB_MOVIE_POSTER_PATH}${posterPath}`;
 }
 
-function RecommendedMovies({ recommendedMovies, loadMore }) {
+function ReloadRecommendationsForm({
+  reloadRecommendations,
+  userId,
+  setUserId,
+}) {
+  return (
+    <div>
+      <label htmlFor="userId" className="sr-only">
+        User ID
+      </label>
+      <input
+        type="text"
+        name="userId"
+        id="userId"
+        className="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        placeholder="user id"
+        value={userId}
+        onChange={(e) => setUserId(e.target.value)}
+      />
+      <button
+        type="button"
+        onClick={() => reloadRecommendations(userId)}
+        className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      >
+        Reload Recommendations
+      </button>
+    </div>
+  );
+}
+
+function RecommendedMovies({
+  recommendedMovies,
+  loadMore,
+  reloadRecommendations,
+}) {
+  const [userId, setUserId] = useState("unauth-user-id");
+  console.log(userId);
+
   return (
     <div className="bg-white">
       <div className="max-w-2xl px-4 py-16 mx-auto sm:py-24 sm:px-6 lg:max-w-7xl lg:px-8">
         <h2 className="text-2xl font-extrabold tracking-tight text-gray-900">
           Recommended Movies
+          <ReloadRecommendationsForm
+            reloadRecommendations={reloadRecommendations}
+            userId={userId}
+            setUserId={setUserId}
+          />
         </h2>
 
         <div className="grid grid-cols-1 mt-6 gap-y-10 gap-x-6 sm:grid-cols-2 lg:grid-cols-4 xl:gap-x-8">

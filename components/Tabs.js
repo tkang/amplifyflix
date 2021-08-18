@@ -13,7 +13,8 @@ function Tabs({ tabs, selectedTabName, setSelectedTabName }) {
           id="tabs"
           name="tabs"
           className="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          defaultValue={tabs.find((tab) => tab.current).name}
+          defaultValue={"Recommendations"}
+          onChange={(e) => setSelectedTabName(e.target.value)}
         >
           {tabs.map((tab) => (
             <option key={tab.name}>{tab.name}</option>

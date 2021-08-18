@@ -47,7 +47,14 @@ function useRecommnededMovies() {
   const SAMPLING_SIZE = 4;
 
   useEffect(() => {
-    getRecommendations({ userId: "random-user-id" }).then((recommendations) => {
+    reloadRecommendations();
+  }, []);
+
+  function reloadRecommendations(userId = "unauthenticated-user") {
+    setRecommendedMovies([]);
+    setCurrIdx(0);
+
+    getRecommendations({ userId }).then((recommendations) => {
       console.log(recommendations);
       const movieIds = recommendations.map((e) => e.itemId);
       const tmdbIds = movieIds
@@ -55,7 +62,7 @@ function useRecommnededMovies() {
         .filter((e) => e !== undefined); // NOTE : some data missing
       setRecommendedTmdbIds(tmdbIds);
     });
-  }, []);
+  }
 
   useEffect(() => {
     loadMore();
@@ -83,7 +90,7 @@ function useRecommnededMovies() {
     setCurrIdx(currIdx + SAMPLING_SIZE);
   }
 
-  return { recommendedMovies, loadMore };
+  return { recommendedMovies, loadMore, reloadRecommendations };
 }
 
 export default useRecommnededMovies;

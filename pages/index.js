@@ -46,10 +46,39 @@ function useUser() {
   return { user, setUser };
 }
 
+function ReloadRecommendationsForm({ reloadRecommendations }) {
+  const [userId, setUserId] = useState("random-user-id");
+  console.log(userId);
+
+  return (
+    <div>
+      <label htmlFor="userId" className="sr-only">
+        User ID
+      </label>
+      <input
+        type="text"
+        name="userId"
+        id="userId"
+        className="block border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        placeholder="user id"
+        onChange={(e) => setUserId(e.target.value)}
+      />
+      <button
+        type="button"
+        onClick={() => reloadRecommendations(userId)}
+        className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
+      >
+        Reload Recommendations
+      </button>
+    </div>
+  );
+}
+
 function Home() {
-  const [selectedTabName, setSelectedTabName] = useState("Recommendations");
-  const { recommendedMovies, loadMore } = useRecommnededMovies();
   const { user } = useUser();
+  const [selectedTabName, setSelectedTabName] = useState("Recommendations");
+  const { recommendedMovies, loadMore, reloadRecommendations } =
+    useRecommnededMovies();
 
   return (
     <div>
@@ -83,6 +112,7 @@ function Home() {
             <RecommendedMovies
               recommendedMovies={recommendedMovies}
               loadMore={loadMore}
+              reloadRecommendations={reloadRecommendations}
             />
           )}
 

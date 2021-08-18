@@ -8,9 +8,6 @@
 
 Netflix, Watcha 와 같은 어플리케이션을 만들어보려 합니다.
 추천 영화들을 보여주고, 영화를 선택하면, 상세정보를 볼수 있게 됩니다.
-추가적으로 어드민인 경우, 영화 영상을 업로드 할수 있게 되고, 업로드 된 영상은 로그인 된 사용자들이 다운로드 할수 있게 됩니다.
-
-그리고 사용자의 액션은 AWS Kinesis DataStream 으로 보내지게 됩니다. Kinesis DataStream 으로 들어온 데이터는 추후에 Anlaytics 나 AI/ML (예 : 추천) 을 위한 작업에 사용될수 있습니다.
 
 ## Overview
 
@@ -501,7 +498,8 @@ function Tabs({ tabs, selectedTabName, setSelectedTabName }) {
           id="tabs"
           name="tabs"
           className="block w-full py-2 pl-3 pr-10 text-base border-gray-300 rounded-md focus:outline-none focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-          defaultValue={tabs.find((tab) => tab.current).name}
+          defaultValue={"Recommendations"}
+          onChange={(e) => setSelectedTabName(e.target.value)}
         >
           {tabs.map((tab) => (
             <option key={tab.name}>{tab.name}</option>
@@ -809,14 +807,13 @@ async function getRecommendations({ userId, numResults = 48 }) {
   return itemList;
 }
 
-function useRecommnededMovies() {
+function useRecommnededMovies(userId = "unauthenticated-user") {
   const [recommendedTmdbIds, setRecommendedTmdbIds] = useState([]);
   const [recommendedMovies, setRecommendedMovies] = useState([]);
   const [currIdx, setCurrIdx] = useState(0);
   const SAMPLING_SIZE = 4;
 
   useEffect(() => {
-    const userId = "random-user-id"; // userId 를 가져올수 있는 상황이면 (예 : 로그인 상태) userId 값을 전달.
     getRecommendations({ userId }).then((recommendations) => {
       console.log(recommendations);
       const movieIds = recommendations.map((e) => e.itemId);
