@@ -5,8 +5,6 @@ import { useEffect, useState } from "react";
 import useRecommnededMovies from "../hooks/useRecommendedMovies";
 import Tabs from "../components/Tabs";
 import UserActions from "../components/UserActions";
-import { withAuthenticator, AmplifySignOut } from "@aws-amplify/ui-react";
-import { Auth } from "aws-amplify";
 
 const DEFAULT_TABS_DATA = [
   { name: "User Actions", href: "#", current: false },
@@ -30,21 +28,6 @@ const DEFAULT_USER_ACTIONS = [
     time: "1h",
   },
 ];
-
-function useUser() {
-  const [user, setUser] = useState(null);
-
-  useEffect(() => {
-    checkUser();
-  }, []);
-
-  async function checkUser() {
-    const u = await Auth.currentAuthenticatedUser();
-    setUser(u);
-  }
-
-  return { user, setUser };
-}
 
 function ReloadRecommendationsForm({ reloadRecommendations }) {
   const [userId, setUserId] = useState("random-user-id");
@@ -75,7 +58,6 @@ function ReloadRecommendationsForm({ reloadRecommendations }) {
 }
 
 function Home() {
-  const { user } = useUser();
   const [selectedTabName, setSelectedTabName] = useState("Recommendations");
   const { recommendedMovies, loadMore, reloadRecommendations } =
     useRecommnededMovies();
@@ -119,10 +101,6 @@ function Home() {
           {selectedTabName === "User Actions" && (
             <UserActions userActions={DEFAULT_USER_ACTIONS} />
           )}
-
-          <div className="mt-2">
-            <AmplifySignOut />
-          </div>
         </main>
       </div>
 
@@ -131,4 +109,4 @@ function Home() {
   );
 }
 
-export default withAuthenticator(Home);
+export default Home;
