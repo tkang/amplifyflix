@@ -4,35 +4,15 @@ import RecommendedMovies from "../components/RecommendedMovies";
 import { useEffect, useState } from "react";
 import useRecommnededMovies from "../hooks/useRecommendedMovies";
 import Tabs from "../components/Tabs";
-import UserActions from "../components/UserActions";
+import LikedMovies from "../components/LikedMovies";
+import useLikedMovies from "../hooks/useLikedMovies";
 
 const DEFAULT_TABS_DATA = [
-  { name: "User Actions", href: "#", current: false },
+  { name: "Liked Movies", href: "#", current: false },
   { name: "Recommendations", href: "#", current: true },
 ];
 
-const people = [
-  {
-    name: "Lindsay Walton",
-    imageUrl:
-      "https://images.unsplash.com/photo-1517841905240-472988babdf9?ixlib=rb-1.2.1&ixid=eyJhcHBfaWQiOjEyMDd9&auto=format&fit=facearea&facepad=3&w=256&h=256&q=80",
-  },
-];
-const DEFAULT_USER_ACTIONS = [
-  {
-    id: 1,
-    person: people[0],
-    project: "Workcation",
-    commit: "2d89f0c8",
-    environment: "production",
-    time: "1h",
-  },
-];
-
-function ReloadRecommendationsForm({ reloadRecommendations }) {
-  const [userId, setUserId] = useState("random-user-id");
-  console.log(userId);
-
+function RealodUserForm({ handleReloadButtonClick, userId, setUserId }) {
   return (
     <div>
       <label htmlFor="userId" className="sr-only">
@@ -42,16 +22,17 @@ function ReloadRecommendationsForm({ reloadRecommendations }) {
         type="text"
         name="userId"
         id="userId"
-        className="block border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
+        className="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
         placeholder="user id"
+        value={userId}
         onChange={(e) => setUserId(e.target.value)}
       />
       <button
         type="button"
-        onClick={() => reloadRecommendations(userId)}
+        onClick={handleReloadButtonClick}
         className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
       >
-        Reload Recommendations
+        Reload User
       </button>
     </div>
   );
@@ -59,8 +40,28 @@ function ReloadRecommendationsForm({ reloadRecommendations }) {
 
 function Home() {
   const [selectedTabName, setSelectedTabName] = useState("Recommendations");
-  const { recommendedMovies, loadMore, reloadRecommendations } =
-    useRecommnededMovies();
+  const [userId, setUserId] = useState("1");
+  const {
+    recommendedMovies,
+    loadMore: loadMoreRecommendations,
+    reloadRecommendations,
+  } = useRecommnededMovies();
+
+  const {
+    reloadUserActions,
+    likedMovies,
+    loadMore: loadMoreLikedMovies,
+  } = useLikedMovies();
+
+  useEffect(() => {
+    reloadData();
+  }, []);
+
+  function reloadData() {
+    console.log("userId = ", userId);
+    reloadRecommendations(userId);
+    reloadUserActions(userId);
+  }
 
   return (
     <div>
@@ -84,22 +85,34 @@ function Home() {
               </p>
             </div>
           </div>
-          <Tabs
-            tabs={DEFAULT_TABS_DATA}
-            selectedTabName={selectedTabName}
-            setSelectedTabName={setSelectedTabName}
+          <RealodUserForm
+            userId={userId}
+            setUserId={setUserId}
+            handleReloadButtonClick={() => reloadData()}
           />
+
+          <div className="mt-4">
+            <Tabs
+              tabs={DEFAULT_TABS_DATA}
+              selectedTabName={selectedTabName}
+              setSelectedTabName={setSelectedTabName}
+            />
+          </div>
 
           {selectedTabName === "Recommendations" && (
             <RecommendedMovies
+              userId={userId}
               recommendedMovies={recommendedMovies}
-              loadMore={loadMore}
-              reloadRecommendations={reloadRecommendations}
+              loadMore={loadMoreRecommendations}
             />
           )}
 
-          {selectedTabName === "User Actions" && (
-            <UserActions userActions={DEFAULT_USER_ACTIONS} />
+          {selectedTabName === "Liked Movies" && (
+            <LikedMovies
+              userId={userId}
+              likedMovies={likedMovies}
+              loadMore={loadMoreLikedMovies}
+            />
           )}
         </main>
       </div>

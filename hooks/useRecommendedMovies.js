@@ -1,27 +1,12 @@
 import { useEffect, useState } from "react";
 import _ from "lodash";
 import AWS from "aws-sdk";
-import SAMPLE_MOVIE_IDS from "../src/sample_movie_ids.json";
-
-const MOVIE_ID_TO_TMDB_ID = {};
-SAMPLE_MOVIE_IDS.forEach(
-  (e) => (MOVIE_ID_TO_TMDB_ID[`${e.movieId}`] = e.tmdbId)
-);
-
-const TMDB_API_KEY = "ca294fadd74fb6ddb4e74a12e521ceae";
-const TMDB_MOVIE_API_URL = "https://api.themoviedb.org/3/movie/";
-
-function generateTmdbMovieApiUrl(tmdbId) {
-  return `${TMDB_MOVIE_API_URL}${tmdbId}?api_key=${TMDB_API_KEY}`;
-}
-
-async function fetchMovieDatas(tmdbIds) {
-  const urls = tmdbIds.map((tmdbId) => generateTmdbMovieApiUrl(tmdbId));
-  console.log(urls);
-  const responses = await Promise.all(urls.map((url) => fetch(url)));
-  const datas = await Promise.all(responses.map((response) => response.json()));
-  return datas;
-}
+import MOVIE_ID_TO_TMDB_ID from "../src/movie_id_to_tmdb_id";
+import {
+  generateTmdbMovieApiUrl,
+  generateMoviePosterUrl,
+  fetchMovieDatas,
+} from "../src/utils";
 
 async function getRecommendations({ userId, numResults = 48 }) {
   const personalizeParams = {
@@ -41,53 +26,53 @@ async function getRecommendations({ userId, numResults = 48 }) {
 }
 
 function useRecommnededMovies() {
-  const [recommendedTmdbIds, setRecommendedTmdbIds] = useState([]);
   const [recommendedMovies, setRecommendedMovies] = useState([]);
+  const [recommendations, setRecommendations] = useState([]);
   const [currIdx, setCurrIdx] = useState(0);
-  const SAMPLING_SIZE = 4;
+  const PAGE_SIZE = 4;
 
-  useEffect(() => {
-    reloadRecommendations();
-  }, []);
-
-  function reloadRecommendations(userId = "unauthenticated-user") {
+  function reloadRecommendations(userId) {
     setRecommendedMovies([]);
     setCurrIdx(0);
 
-    getRecommendations({ userId }).then((recommendations) => {
-      console.log(recommendations);
-      const movieIds = recommendations.map((e) => e.itemId);
-      const tmdbIds = movieIds
-        .map((movieId) => MOVIE_ID_TO_TMDB_ID[movieId])
-        .filter((e) => e !== undefined); // NOTE : some data missing
-      setRecommendedTmdbIds(tmdbIds);
+    getRecommendations({ userId }).then((items) => {
+      console.log(items);
+      const recommendedItems = items.map((e) => {
+        const tmdbId = MOVIE_ID_TO_TMDB_ID[e.itemId];
+        const tmdbUrl = generateTmdbMovieApiUrl(tmdbId);
+        return {
+          ...e,
+          tmdbId,
+          tmdbUrl,
+        };
+      });
+      setRecommendations(recommendedItems);
     });
   }
-
-  useEffect(() => {
-    loadMore();
-  }, [recommendedTmdbIds]);
 
   async function fetchData(startingIdx) {
-    const ids = recommendedTmdbIds.slice(
-      startingIdx,
-      startingIdx + SAMPLING_SIZE
-    );
-    setCurrIdx(startingIdx + SAMPLING_SIZE);
+    const tmdbIds = recommendations
+      .slice(startingIdx, startingIdx + PAGE_SIZE)
+      .map((e) => e.tmdbId);
+    setCurrIdx(startingIdx + PAGE_SIZE);
 
-    fetchMovieDatas(ids).then((datas) => {
-      console.log(datas);
-      setRecommendedMovies([...recommendedMovies, ...datas]);
+    fetchMovieDatas(tmdbIds).then((datas) => {
+      const l = datas.map((e) => ({
+        ...e,
+        posterUrl: generateMoviePosterUrl(e.poster_path),
+      }));
+      setRecommendedMovies([...recommendedMovies, ...l]);
     });
   }
 
+  console.log("recommendedMovies = ", recommendedMovies);
+
   function loadMore() {
-    if (currIdx >= recommendedTmdbIds.length) {
+    if (currIdx >= recommendations.length) {
       console.log("reached end!");
       return;
     }
     fetchData(currIdx);
-    setCurrIdx(currIdx + SAMPLING_SIZE);
   }
 
   return { recommendedMovies, loadMore, reloadRecommendations };
