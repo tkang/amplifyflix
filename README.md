@@ -23,6 +23,12 @@ This project will be a fully-serverless application with following architecture.
 
 [Demo](https://dev.d1x2h1aq8od9j1.amplifyapp.com/)
 
+<br />
+
+### Architecture
+
+![amplifyflix-architecture](amplifyflix-architecture.png)
+
 ### Required Background / Level
 
 본 워크샾은 AWS Amplify 를 이용하여 full stack serverless 어플리케이션을 개발하고 배포하고 싶은 front-end 와 back-end 개발자들을 위해 만들어졌습니다.
