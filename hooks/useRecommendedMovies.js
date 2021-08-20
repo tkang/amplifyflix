@@ -1,35 +1,22 @@
 import { useEffect, useState } from "react";
 import _ from "lodash";
-import AWS from "aws-sdk";
 import MOVIE_ID_TO_TMDB_ID from "../src/movie_id_to_tmdb_id";
 import {
   generateTmdbMovieApiUrl,
   generateMoviePosterUrl,
   fetchMovieDatas,
+  getRecommendations,
 } from "../src/utils";
-
-async function getRecommendations({ userId, numResults = 48 }) {
-  const personalizeParams = {
-    campaignArn:
-      "arn:aws:personalize:ap-northeast-2:652351719285:campaign/movie-recommendations",
-    numResults,
-    userId,
-  };
-
-  const personalizeRuntime = new AWS.PersonalizeRuntime();
-
-  const data = await personalizeRuntime
-    .getRecommendations(personalizeParams)
-    .promise();
-  const itemList = data.itemList;
-  return itemList;
-}
 
 function useRecommnededMovies() {
   const [recommendedMovies, setRecommendedMovies] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [currIdx, setCurrIdx] = useState(0);
   const PAGE_SIZE = 4;
+
+  useEffect(() => {
+    loadMore();
+  }, [recommendations]);
 
   function reloadRecommendations(userId) {
     setRecommendedMovies([]);

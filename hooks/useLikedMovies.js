@@ -13,6 +13,10 @@ function useLikedMovies() {
 
   const PAGE_SIZE = 4;
 
+  useEffect(() => {
+    loadMore();
+  }, [userActions]);
+
   function reloadUserActions(userId) {
     setCurrIdx(0);
     setLikedMovies([]);

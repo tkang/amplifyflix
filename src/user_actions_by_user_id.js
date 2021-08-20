@@ -1,9 +1,9 @@
-import DATA from "./user_actions.json";
+import USER_ACTIONS from "./user_actions.json";
 import MOVIE_ID_TO_TMDB_ID from "./movie_id_to_tmdb_id";
 import { generateTmdbMovieApiUrl, generateMoviePosterUrl } from "./utils";
 
 const USER_ACTIONS_BY_USER_ID = {};
-DATA.forEach((e) => {
+USER_ACTIONS.forEach((e) => {
   const key = `${e.userId}`;
   if (!USER_ACTIONS_BY_USER_ID[key]) USER_ACTIONS_BY_USER_ID[key] = [];
 

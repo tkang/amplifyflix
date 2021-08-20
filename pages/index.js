@@ -1,46 +1,16 @@
+/* pages/index.js */
 import Head from "next/head";
-import RecommendedMovies from "../components/RecommendedMovies";
-
 import { useEffect, useState } from "react";
-import useRecommnededMovies from "../hooks/useRecommendedMovies";
+import ReloadUserForm from "../components/ReloadUserForm";
 import Tabs from "../components/Tabs";
-import LikedMovies from "../components/LikedMovies";
+import useRecommnededMovies from "../hooks/useRecommendedMovies";
+import MovieList from "../components/MovieList";
 import useLikedMovies from "../hooks/useLikedMovies";
-
-const DEFAULT_TABS_DATA = [
-  { name: "Liked Movies", href: "#", current: false },
-  { name: "Recommendations", href: "#", current: true },
-];
-
-function RealodUserForm({ handleReloadButtonClick, userId, setUserId }) {
-  return (
-    <div>
-      <label htmlFor="userId" className="sr-only">
-        User ID
-      </label>
-      <input
-        type="text"
-        name="userId"
-        id="userId"
-        className="border-gray-300 rounded-md shadow-sm focus:ring-indigo-500 focus:border-indigo-500 sm:text-sm"
-        placeholder="user id"
-        value={userId}
-        onChange={(e) => setUserId(e.target.value)}
-      />
-      <button
-        type="button"
-        onClick={handleReloadButtonClick}
-        className="inline-flex items-center px-4 py-2 text-sm font-medium text-gray-700 bg-white border border-gray-300 rounded-md shadow-sm hover:bg-gray-50 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-indigo-500"
-      >
-        Reload User
-      </button>
-    </div>
-  );
-}
 
 function Home() {
   const [selectedTabName, setSelectedTabName] = useState("Recommendations");
   const [userId, setUserId] = useState("1");
+
   const {
     recommendedMovies,
     loadMore: loadMoreRecommendations,
@@ -54,11 +24,11 @@ function Home() {
   } = useLikedMovies();
 
   useEffect(() => {
-    reloadData();
+    reloadUser();
   }, []);
 
-  function reloadData() {
-    console.log("userId = ", userId);
+  function reloadUser() {
+    console.log("reloading userId = ", userId);
     reloadRecommendations(userId);
     reloadUserActions(userId);
   }
@@ -84,36 +54,35 @@ function Home() {
                 Welcome to AmplifyFlix
               </p>
             </div>
-          </div>
-          <RealodUserForm
-            userId={userId}
-            setUserId={setUserId}
-            handleReloadButtonClick={() => reloadData()}
-          />
-
-          <div className="mt-4">
-            <Tabs
-              tabs={DEFAULT_TABS_DATA}
-              selectedTabName={selectedTabName}
-              setSelectedTabName={setSelectedTabName}
-            />
-          </div>
-
-          {selectedTabName === "Recommendations" && (
-            <RecommendedMovies
+            <ReloadUserForm
               userId={userId}
-              recommendedMovies={recommendedMovies}
-              loadMore={loadMoreRecommendations}
+              setUserId={setUserId}
+              handleReloadButtonClick={() => reloadUser()}
             />
-          )}
 
-          {selectedTabName === "Liked Movies" && (
-            <LikedMovies
-              userId={userId}
-              likedMovies={likedMovies}
-              loadMore={loadMoreLikedMovies}
-            />
-          )}
+            <div className="mt-4">
+              <Tabs
+                selectedTabName={selectedTabName}
+                setSelectedTabName={setSelectedTabName}
+              />
+            </div>
+
+            {selectedTabName === "Recommendations" && (
+              <MovieList
+                title={`Recommended Movies for ${userId}`}
+                movies={recommendedMovies}
+                loadMore={loadMoreRecommendations}
+              />
+            )}
+
+            {selectedTabName === "Liked Movies" && (
+              <MovieList
+                title={`Movies Liked by ${userId}`}
+                movies={likedMovies}
+                loadMore={loadMoreLikedMovies}
+              />
+            )}
+          </div>
         </main>
       </div>
 
