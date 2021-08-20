@@ -6,10 +6,23 @@ import Tabs from "../components/Tabs";
 import useRecommnededMovies from "../hooks/useRecommendedMovies";
 import MovieList from "../components/MovieList";
 import useLikedMovies from "../hooks/useLikedMovies";
+import { withAuthenticator, AmplifySignOut } from "@aws-amplify/ui-react";
+
+import { Auth } from "aws-amplify";
 
 function Home() {
   const [selectedTabName, setSelectedTabName] = useState("Recommendations");
   const [userId, setUserId] = useState("1");
+
+  useEffect(() => {
+    checkUser();
+  }, []);
+
+  async function checkUser() {
+    const user = await Auth.currentAuthenticatedUser();
+    console.log("user: ", user);
+    console.log("user attributes: ", user.attributes);
+  }
 
   const {
     recommendedMovies,
@@ -83,6 +96,8 @@ function Home() {
               />
             )}
           </div>
+
+          <AmplifySignOut />
         </main>
       </div>
 
@@ -91,4 +106,4 @@ function Home() {
   );
 }
 
-export default Home;
+export default withAuthenticator(Home);
