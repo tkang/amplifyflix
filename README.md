@@ -40,6 +40,7 @@ React 에대한 지식이 있다면 도움이 되지만, 필수는 아닙니다.
 - Next.js application
 - Web application Hosting
 - Using Personalize to give personalized recommendation to users
+- Using Cognito Identity Pool to authenticate access to Personalize
 - Deleting the resources
 
 ### Features we will implement
