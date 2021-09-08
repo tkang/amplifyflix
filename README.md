@@ -404,8 +404,8 @@ function classNames(...classes) {
 }
 
 const DEFAULT_TABS_DATA = [
-  { name: "Liked Movies", href: "liked_movies" },
-  { name: "Recommendations", href: "recommended_movies" },
+  { name: "Liked Movies", href: "#" },
+  { name: "Recommendations", href: "#" },
 ];
 
 function Tabs({
@@ -822,15 +822,15 @@ import {
   getRecommendations,
 } from "../src/utils";
 
-useEffect(() => {
-  loadMore();
-}, [recommendations]);
-
 function useRecommnededMovies() {
   const [recommendedMovies, setRecommendedMovies] = useState([]);
   const [recommendations, setRecommendations] = useState([]);
   const [currIdx, setCurrIdx] = useState(0);
   const PAGE_SIZE = 4;
+
+  useEffect(() => {
+    loadMore();
+  }, [recommendations]);
 
   function reloadRecommendations(userId) {
     setRecommendedMovies([]);
