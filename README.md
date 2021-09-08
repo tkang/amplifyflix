@@ -467,7 +467,7 @@ export default Tabs;
 **compnents/ReloadUserForm.js** 를 다음과 같이 작성해 주세요.
 
 ```js
-function RealodUserForm({ handleReloadButtonClick, userId, setUserId }) {
+function ReloadUserForm({ handleReloadButtonClick, userId, setUserId }) {
   return (
     <div>
       <label htmlFor="userId" className="sr-only">
